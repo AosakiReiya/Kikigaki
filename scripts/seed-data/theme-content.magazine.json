@@ -1,0 +1,15 @@
+{
+	"nav": [
+		{ "href": "/", "label": "Latest" },
+		{ "href": "/blog", "label": "Issues" },
+		{ "href": "/series", "label": "Columns" },
+		{ "href": "/search", "label": "Archive" },
+		{ "href": "/about", "label": "About" }
+	],
+	"mastNote": "Kikigaki Magazine — long-form notes on software, writing and the quiet parts in between.",
+	"newsdesk": {
+		"email": "editor@kikigaki.example",
+		"tipline": "pitches@kikigaki.example",
+		"note": "We read everything. Guest pieces welcome."
+	}
+}

@@ -1,0 +1,126 @@
+/* ------------------------------------------------------------------ */
+/* Form control theming (Phase 24.5) — loaded at the tail of layout.css (not @layer,   */
+/* overriding @tailwindcss/forms base styles); adapts to all four theme tokens automatically.        */
+/* ------------------------------------------------------------------ */
+
+input[type='checkbox'],
+input[type='radio'] {
+	appearance: none;
+	display: inline-grid;
+	place-content: center;
+	flex: none;
+	width: 1.1rem;
+	height: 1.1rem;
+	margin: 0;
+	border: 1.5px solid color-mix(in srgb, var(--color-line) 70%, var(--color-ink-muted));
+	background: var(--color-bg-elevated);
+	cursor: pointer;
+	transition:
+		background-color 0.15s ease,
+		border-color 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+input[type='checkbox'] {
+	border-radius: 0.32rem;
+}
+
+input[type='radio'] {
+	border-radius: 50%;
+}
+
+input[type='checkbox']::before {
+	content: '';
+	width: 0.68em;
+	height: 0.68em;
+	scale: 0;
+	transition: scale 0.13s cubic-bezier(0.34, 1.56, 0.64, 1);
+	background: var(--color-accent-ink, #fff);
+	clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 68%);
+}
+
+input[type='radio']::before {
+	content: '';
+	width: 55%;
+	height: 55%;
+	border-radius: 50%;
+	scale: 0;
+	transition: scale 0.13s cubic-bezier(0.34, 1.56, 0.64, 1);
+	background: var(--color-accent-ink, #fff);
+}
+
+input[type='checkbox']:checked,
+input[type='radio']:checked {
+	background: var(--color-accent);
+	border-color: var(--color-strong);
+}
+
+input[type='checkbox']:checked::before,
+input[type='radio']:checked::before {
+	scale: 1;
+}
+
+input[type='checkbox']:hover:not(:checked),
+input[type='radio']:hover:not(:checked) {
+	border-color: var(--color-strong);
+}
+
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 28%, transparent);
+}
+
+input[type='checkbox']:disabled,
+input[type='radio']:disabled {
+	opacity: 0.45;
+	cursor: default;
+}
+
+/* ---- text controls and select unification ---- */
+
+input[type='text'],
+input[type='search'],
+input[type='email'],
+input[type='url'],
+input[type='number'],
+input[type='date'],
+input[type='time'],
+input[type='datetime-local'],
+textarea,
+select {
+	border: 1px solid var(--color-line);
+	border-radius: 0.45rem;
+	background: var(--color-bg-elevated);
+	color: var(--color-ink);
+	/* kill the browser-default Arial 13.3px (all controls follow the page font family; sizes owned by surface rules) */
+	font-family: inherit;
+	transition:
+		border-color 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+::placeholder {
+	color: var(--color-ink-muted);
+	opacity: 0.75;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+	outline: none;
+	border-color: var(--color-strong);
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 22%, transparent);
+}
+
+select {
+	appearance: none;
+	padding-right: 1.8rem;
+	background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.6' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 0.55rem center;
+}
+
+::selection {
+	background: color-mix(in srgb, var(--color-accent) 32%, transparent);
+}

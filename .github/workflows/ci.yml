@@ -1,0 +1,206 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      locales:
+        description: 'One-off locale override (comma-separated, e.g. zh-tw,en,ko; empty = config/locales.json)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quality:
+    name: Lint, type-check & test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Verify i18n config (settings ↔ config/locales.json)
+        run: pnpm i18n:check
+
+      - name: Generate paraglide runtime
+        run: pnpm paraglide-js generate --project ./project.inlang --outdir ./src/lib/paraglide || true
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type-check
+        run: pnpm check
+
+      - name: Unit & component tests
+        run: pnpm test
+
+  deploy-preview:
+    name: Preview deploy (PR)
+    if: github.event_name == 'pull_request'
+    needs: quality
+    runs-on: ubuntu-latest
+    environment: preview
+    concurrency:
+      group: preview-${{ github.ref }}
+      cancel-in-progress: true
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Sync locales (env override I18N_LOCALES → else config)
+        run: |
+          if [ -n "${I18N_LOCALES}" ]; then
+            node scripts/i18n-sync.mjs --locales "${I18N_LOCALES}"
+          else
+            pnpm i18n:sync
+          fi
+        env:
+          I18N_LOCALES: ${{ vars.I18N_LOCALES }}
+
+      - run: pnpm build
+      - name: Deploy preview
+        id: deploy
+        run: |
+          OUT=$(pnpm exec wrangler pages deploy .svelte/cloudflare --project-name "${{ vars.PAGES_PROJECT || 'kikigaki' }}" --branch pr-${{ github.event.number }} 2>&1 | tee /dev/stderr)
+          echo "url=$(echo "$OUT" | grep -oE 'https://[a-z0-9-]+\.kikigaki\.pages\.dev' | tail -1)" >> "$GITHUB_OUTPUT"
+      - name: Report
+        run: |
+          echo "### 🔍 Preview: ${{ steps.deploy.outputs.url }}" >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment ${{ github.event.number }} --repo "$GITHUB_REPOSITORY" --body "**🔍 Preview deploy**: ${{ steps.deploy.outputs.url }} (branch \`pr-${{ github.event.number }}\`)"
+
+  deploy-production:
+    name: Production deploy (main)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: quality
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.PRODUCTION_URL }}
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Sync locales (dispatch input → env var → config)
+        run: |
+          LOCALES="${{ github.event.inputs.locales || vars.I18N_LOCALES }}"
+          if [ -n "$LOCALES" ]; then
+            node scripts/i18n-sync.mjs --locales "$LOCALES"
+          else
+            pnpm i18n:sync
+          fi
+
+      - run: pnpm build
+
+      - name: Apply D1 migrations (remote)
+        run: pnpm exec wrangler d1 migrations apply "${{ vars.D1_DATABASE || 'kikigaki' }}" --remote
+
+      - name: Deploy production
+        run: pnpm exec wrangler pages deploy .svelte/cloudflare --project-name "${{ vars.PAGES_PROJECT || 'kikigaki' }}"
+
+      - name: Smoke
+        if: vars.PRODUCTION_URL != ''
+        run: |
+          sleep 12
+          for u in /robots.txt /rss.xml /blog /series.rss.xml; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "${{ vars.PRODUCTION_URL }}$u?ci=$GITHUB_SHA")
+            echo "$code $u"
+            [ "$code" = "200" ] || exit 1
+          done
+
+  e2e:
+    name: e2e smoke (manual)
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: npx playwright install --with-deps chromium
+      - name: Local D1 schema + demo content + test admin
+        run: |
+          pnpm exec wrangler d1 migrations kikigaki --local --yes
+          node scripts/seed-demo.mjs --posts
+          node .e2e-archive/bootstrap-admin.mjs
+      - name: Mock payment env (79e suite)
+        run: printf 'PAYMENT_PROVIDER=\"mock\"\nALLOW_MOCK_PAYMENTS=\"1\"\n' >> .dev.vars
+      - name: Start dev server
+        run: nohup pnpm exec vite dev --port 5199 > /tmp/dev.log 2>&1 &
+      - name: Wait until ready
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:5199/ -o /dev/null && exit 0
+            sleep 2
+          done
+          echo '--- dev log tail ---'; tail -50 /tmp/dev.log; exit 1
+      - name: Theme-routes suite (p78f)
+        run: node .e2e-archive/p78f.mjs
+      - name: 79 slim + i18n suite (p79)
+        run: node .e2e-archive/p79.mjs
+      - name: 79b dynamic content CRUD suite (p79b)
+        run: node .e2e-archive/p79b.mjs
+      - name: 79d public rendering + sitemap suite (p79d)
+        run: node .e2e-archive/p79d.mjs
+      - name: 79e commerce full-chain suite (p79e)
+        run: node .e2e-archive/p79e.mjs
+      - name: 79e-3 support/tip suite (p79f)
+        run: node .e2e-archive/p79f.mjs
+      - name: 83a theme slots suite (p83a)
+        run: node .e2e-archive/p83a.mjs
+      - name: 83c extension manifest suite (p83c)
+        run: node .e2e-archive/p83c.mjs
+      - name: Dev log on failure
+        if: failure()
+        run: tail -100 /tmp/dev.log

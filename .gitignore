@@ -1,0 +1,43 @@
+node_modules
+
+# Output
+.output
+.vercel
+.netlify
+.wrangler
+/.svelte-kit
+/.svelte
+/build
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
+!.env.example
+!.env.test
+
+# Cloudflare Pages local bindings (platformProxy reads .dev.vars)
+.dev.vars
+
+# Vite
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+# Paraglide
+src/lib/paraglide
+project.inlang/cache/
+
+# Generated sync SQL
+scripts/generated
+
+*storybook.log
+storybook-static
+
+# D1 backups (local only)
+backups/
+
+# local D1 database file (wrangler --local uses .wrangler/state; 根目錄殘留檔不入庫)
+d1.sqlite
+data/

@@ -1,0 +1,145 @@
+/* ------------------------------------------------------------------ */
+/* Post body (.prose) typography                                            */
+/* front-end post pages and the admin editor preview share these styles for true WYSIWYG        */
+/* ------------------------------------------------------------------ */
+.prose {
+	--tw-prose-body: color-mix(in srgb, var(--color-ink) 88%, var(--color-bg));
+	--tw-prose-headings: var(--color-ink);
+	--tw-prose-lead: var(--color-ink-muted);
+	--tw-prose-links: var(--color-ink);
+	--tw-prose-bold: var(--color-strong);
+	--tw-prose-counters: var(--color-ink-muted);
+	--tw-prose-bullets: var(--color-accent);
+	--tw-prose-hr: var(--color-line);
+	--tw-prose-quotes: var(--color-ink-muted);
+	--tw-prose-quote-borders: var(--color-accent);
+	--tw-prose-captions: var(--color-ink-muted);
+	--tw-prose-code: var(--color-ink);
+	--tw-prose-pre-code: #f2f0ea;
+	--tw-prose-pre-bg: #101014;
+	--tw-prose-th-borders: var(--color-line);
+	--tw-prose-td-borders: var(--color-line);
+}
+
+.prose h2 {
+	font-size: 1.625rem;
+	font-weight: 700;
+	margin: 3.5rem 0 1.25rem;
+	scroll-margin-top: 5rem;
+}
+
+.prose h3 {
+	font-size: 1.25rem;
+	font-weight: 700;
+	margin: 2.5rem 0 1rem;
+	scroll-margin-top: 5rem;
+}
+
+.prose p {
+	margin: 1.25rem 0;
+	line-height: 1.85;
+	color: color-mix(in srgb, var(--color-ink) 88%, var(--color-bg));
+}
+
+.prose a {
+	color: var(--color-ink);
+	text-decoration: underline;
+	text-decoration-color: var(--color-strong);
+	text-underline-offset: 3px;
+	transition: text-decoration-color 0.2s ease;
+}
+
+.prose ul,
+.prose ol {
+	margin: 1.25rem 0;
+	padding-left: 1.5rem;
+	line-height: 1.85;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	color: color-mix(in srgb, var(--color-ink) 88%, var(--color-bg));
+}
+
+.prose li::marker {
+	color: var(--color-strong);
+}
+
+.prose blockquote {
+	margin: 2rem 0;
+	padding: 0.5rem 0 0.5rem 1.5rem;
+	border-left: 2px solid var(--color-accent);
+	color: var(--color-ink-muted);
+}
+
+.prose pre {
+	margin: 2rem 0;
+	padding: 1.5rem 1.75rem;
+	border-radius: 0.875rem;
+	border: 1px solid var(--color-line);
+	background: #101014;
+	color: #f2f0ea;
+	overflow-x: auto;
+	font-family: var(--font-mono);
+	font-size: 0.875rem;
+	line-height: 1.75;
+}
+
+.prose :not(pre) > code {
+	font-family: var(--font-mono);
+	padding: 0.125rem 0.4375rem;
+	border-radius: 0.375rem;
+	border: 1px solid var(--color-line);
+	background: color-mix(in srgb, var(--color-ink) 5%, transparent);
+	font-size: 0.875em;
+}
+
+.prose table {
+	width: 100%;
+	margin: 2rem 0;
+	border-collapse: collapse;
+	font-size: 0.9375rem;
+}
+
+.prose th,
+.prose td {
+	border: 1px solid var(--color-line);
+	padding: 0.625rem 0.875rem;
+	text-align: left;
+}
+
+.prose th {
+	background: color-mix(in srgb, var(--color-ink) 4%, transparent);
+}
+
+/* mobile: tables scroll in containers so they can't burst the layout */
+.prose table {
+	display: block;
+	overflow-x: auto;
+	max-width: 100%;
+}
+
+.prose hr {
+	margin: 3.5rem 0;
+	border: none;
+	border-top: 1px solid var(--color-line);
+}
+
+/* ------------------------------------------------------------------ */
+/* Content Component placeholders (.cc)                                        */
+/* placeholder divs come from markdown.ts; real components mount client-side;                    */
+/* components manage their own margins — placeholder layer stays zero to avoid double spacing                        */
+/* ------------------------------------------------------------------ */
+.prose .cc {
+	margin: 0;
+	display: block;
+	min-height: 1.5rem;
+}
+
+.prose .cc:empty::before {
+	content: '';
+	display: block;
+	min-height: 4rem;
+	border: 1px dashed var(--color-line);
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, var(--color-ink) 3%, transparent);
+}

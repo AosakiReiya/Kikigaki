@@ -1,0 +1,6 @@
+{
+	// svelte-check only: same graph as tsconfig.json minus fixture templates
+	// (fixture files carry intentional placeholders — never type-checked).
+	"extends": "./tsconfig.json",
+	"exclude": ["tests/fixtures"]
+}

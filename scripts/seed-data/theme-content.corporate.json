@@ -1,0 +1,123 @@
+{
+	"nav": [
+		{
+			"href": "/",
+			"label": "Home"
+		},
+		{
+			"href": "/services",
+			"label": "Services"
+		},
+		{
+			"href": "/about",
+			"label": "About us"
+		},
+		{
+			"href": "/blog",
+			"label": "News"
+		},
+		{
+			"href": "/contact",
+			"label": "Contact"
+		}
+	],
+	"hero": {
+		"eyebrow": "ACME CONSULTING",
+		"title": "We build reliable data platforms",
+		"body": "Strategy, engineering and operations for teams that run on data. From architecture to day-2 operations.",
+		"ctas": [
+			{
+				"href": "/services",
+				"label": "Explore services"
+			},
+			{
+				"href": "/contact",
+				"label": "Talk to us"
+			}
+		]
+	},
+	"stats": [
+		{
+			"n": "12+",
+			"label": "Years operating"
+		},
+		{
+			"n": "80",
+			"label": "Projects delivered"
+		},
+		{
+			"n": "99.95%",
+			"label": "Uptime maintained"
+		}
+	],
+	"servicesTitle": "Capabilities",
+	"services": [
+		{
+			"title": "Platform engineering",
+			"text": "Kubernetes, IaC and observability built for small teams."
+		},
+		{
+			"title": "Data migration",
+			"text": "Zero-downtime moves off legacy warehouses."
+		},
+		{
+			"title": "24/7 operations",
+			"text": "SRE coverage with transparent SLAs."
+		}
+	],
+	"newsTitle": "Latest news",
+	"aboutHeadline": "A consultancy built around reliability",
+	"valuesTitle": "Principles",
+	"values": [
+		{
+			"title": "Outcomes over output",
+			"text": "We bill for results, not hours."
+		},
+		{
+			"title": "Boring technology",
+			"text": "Proven tools, deployed carefully."
+		},
+		{
+			"title": "Plain speech",
+			"text": "Status reports you can forward to the board."
+		}
+	],
+	"workTitle": "Selected engagements",
+	"ctaTitle": "Have a platform problem?",
+	"contactPage": true,
+	"contact": {
+		"email": "hello@acme.example",
+		"phone": "+886 2 5555 0134",
+		"address": "110 Taiwan Taipei, Xinyi District, No. 100, Section 5, Zhongxiao East Road",
+		"hours": "Mon–Fri 09:00–18:00 CST",
+		"note": "Tell us about your workload — we reply within one business day."
+	},
+	"pages": {
+		"services": {
+			"title": "Our services",
+			"intro": "Three practices, one accountable team.",
+			"summary": "What ACME does",
+			"items": [
+				{
+					"title": "Platform engineering",
+					"text": "Design, build and run your data platform.",
+					"meta": "Kubernetes · Terraform · Grafana"
+				},
+				{
+					"title": "Data migration",
+					"text": "Move off legacy warehouses without downtime.",
+					"meta": "ETL · Dual-write · Cutover"
+				},
+				{
+					"title": "SRE coverage",
+					"text": "24/7 operations with transparent SLAs.",
+					"meta": "On-call · SLO · Postmortems"
+				}
+			]
+		},
+		"contact": {
+			"title": "Talk to us",
+			"summary": "Contact ACME"
+		}
+	}
+}

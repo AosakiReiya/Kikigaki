@@ -1,0 +1,192 @@
+/* ================================================================== */
+/* Official design themes (html[data-ui-theme])                                  */
+/*                                                                  */
+/* - abstract = current baseline (no overrides; tokens in layout.css)                  */
+/* - other themes override tokens via "dual-attribute selectors":                                */
+/*   light uses :not([data-theme='dark']) (0,2,1), dark uses the compound (0,2,0),    */
+/*   always above base :root/[data-theme='dark'] (0,1,0) → load order irrelevant,      */
+/*   and light/dark mode stays orthogonal to design theme (freely combinable)                      */
+/* - zero content contact: themes only move tokens and a little global texture; post data/components unaffected          */
+/* ================================================================== */
+
+/* ------------------------------------------------------------------ */
+/* minimal — restrained: calm accent color, converged headings, texture kept to a minimum                    */
+/* ------------------------------------------------------------------ */
+html[data-ui-theme='minimal']:not([data-theme='dark']) {
+	--color-accent: #45e07a;
+	--color-accent-ink: #08210f;
+	--color-strong: #1d7a43;
+	--grain-opacity: 0.015;
+	--text-display: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+html[data-ui-theme='minimal'][data-theme='dark'] {
+	--color-accent: #3ddc84;
+	--color-strong: #3ddc84;
+	--grain-opacity: 0.02;
+	--text-display: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+/* ------------------------------------------------------------------ */
+/* terminal — monospace is king, phosphor green, no-rounded-corner texture                        */
+/* ------------------------------------------------------------------ */
+html[data-ui-theme='terminal']:not([data-theme='dark']) {
+	--color-bg: #eef0e6;
+	--color-bg-elevated: #f7f8f1;
+	--color-ink: #14260f;
+	--color-ink-muted: #55684a;
+	--color-line: #cdd3bd;
+	--color-accent: #2f9e44;
+	--color-accent-ink: #f6fff2;
+	--color-strong: #2f7d32;
+	--font-display: 'Fira Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+	--grain-opacity: 0;
+	--text-display: clamp(2.25rem, 6vw, 4.25rem);
+}
+
+html[data-ui-theme='terminal'][data-theme='dark'] {
+	--color-bg: #060d06;
+	--color-bg-elevated: #0b150c;
+	--color-ink: #7ee787;
+	--color-ink-muted: #46a052;
+	--color-line: #16351b;
+	--color-accent: #2bd547;
+	--color-accent-ink: #04140a;
+	--color-strong: #b6ffb0;
+	--font-display: 'Fira Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+	--grain-opacity: 0.02;
+	--text-display: clamp(2.25rem, 6vw, 4.25rem);
+}
+
+/* terminal texture: zero heading letter-spacing (monotone mono feel), harder selection inversion */
+html[data-ui-theme='terminal'] {
+	letter-spacing: 0;
+}
+
+html[data-ui-theme='terminal'] h1,
+html[data-ui-theme='terminal'] h2,
+html[data-ui-theme='terminal'] h3 {
+	letter-spacing: 0;
+}
+
+/* terminal header is sticky (in-flow) → remove the 3.5rem top padding assumed by fixed-header */
+html[data-ui-theme='terminal'] #page-content {
+	padding-top: 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* magazine — print: serif headings, warm paper, orange-red accent                       */
+/* ------------------------------------------------------------------ */
+html[data-ui-theme='magazine']:not([data-theme='dark']) {
+	--color-bg: #f7f2e9;
+	--color-bg-elevated: #fffdf8;
+	--color-ink: #221c14;
+	--color-ink-muted: #6f6353;
+	--color-line: #e2d8c6;
+	--color-accent: #c2410c;
+	--color-accent-ink: #fff7ed;
+	--color-strong: #9a3412;
+	--font-display: Georgia, 'Noto Serif TC', 'Songti TC', 'Times New Roman', serif;
+	--font-body: Georgia, 'Noto Serif TC', 'Songti TC', 'Nimbus Roman', 'Times New Roman', serif;
+	--grain-opacity: 0.02;
+}
+
+html[data-ui-theme='magazine'][data-theme='dark'] {
+	--color-bg: #14100b;
+	--color-bg-elevated: #1d1710;
+	--color-ink: #f0e6d2;
+	--color-ink-muted: #a4937a;
+	--color-line: #33291d;
+	--color-accent: #f59e0b;
+	--color-accent-ink: #1c1204;
+	--color-strong: #fbbf24;
+	--font-display: Georgia, 'Noto Serif TC', 'Songti TC', 'Times New Roman', serif;
+	--font-body: Georgia, 'Noto Serif TC', 'Songti TC', 'Nimbus Roman', 'Times New Roman', serif;
+	--grain-opacity: 0.035;
+}
+
+/* magazine texture: negative heading letter-spacing tightened (print feel) */
+html[data-ui-theme='magazine'] h1,
+html[data-ui-theme='magazine'] h2 {
+	letter-spacing: -0.035em;
+}
+
+/* theme-scaffold:css (injection point for new theme token blocks) */
+
+html[data-ui-theme='shop']:not([data-theme='dark']) {
+	/* storefront: cream paper base + berry-red accent + serif product type */
+	--color-bg: #f8f5f0;
+	--color-bg-elevated: #fffdf9;
+	--color-ink: #231f1b;
+	--color-ink-muted: #7a736a;
+	--color-line: #e4ddd2;
+	--color-accent: #b4324c;
+	--color-accent-ink: #fffdf9;
+	--color-strong: #8f2338;
+	--font-display: Georgia, 'Noto Serif TC', 'Songti TC', serif;
+	--grain-opacity: 0.02;
+}
+html[data-ui-theme='shop'][data-theme='dark'] {
+	--color-bg: #171412;
+	--color-bg-elevated: #201c19;
+	--color-ink: #f0ebe2;
+	--color-ink-muted: #9a9187;
+	--color-line: #35302a;
+	--color-accent: #e0567a;
+	--color-accent-ink: #171412;
+	--color-strong: #e0567a;
+}
+
+html[data-ui-theme='news']:not([data-theme='dark']) {
+	--color-bg: #fafafa;
+	--color-bg-elevated: #ffffff;
+	--color-ink: #141414;
+	--color-ink-muted: #6b6b6b;
+	--color-line: #e2e2e2;
+	--color-accent: #c8102e;
+	--color-accent-ink: #ffffff;
+	--color-strong: #8b0000;
+	--grain-opacity: 0;
+	--text-display: clamp(2rem, 4.5vw, 3rem);
+}
+
+html[data-ui-theme='news'][data-theme='dark'] {
+	--color-bg: #0d0d0f;
+	--color-bg-elevated: #17171a;
+	--color-ink: #f2f2f2;
+	--color-ink-muted: #9a9aa2;
+	--color-line: #2a2a30;
+	--color-accent: #ff4d5e;
+	--color-accent-ink: #1a0005;
+	--color-strong: #c8102e;
+	--grain-opacity: 0;
+	--text-display: clamp(2rem, 4.5vw, 3rem);
+}
+
+html[data-ui-theme='corporate']:not([data-theme='dark']) {
+	--color-bg: #f6f9fc;
+	--color-bg-elevated: #ffffff;
+	--color-ink: #0a1f44;
+	--color-ink-muted: #5a6b85;
+	--color-line: #d7e0ec;
+	--color-accent: #0f62fe;
+	--color-accent-ink: #ffffff;
+	--color-strong: #0043ce;
+	--grain-opacity: 0;
+	--text-display: clamp(2.25rem, 5vw, 3.5rem);
+}
+
+html[data-ui-theme='corporate'][data-theme='dark'] {
+	--color-bg: #060d1a;
+	--color-bg-elevated: #0b1728;
+	--color-ink: #eef3fa;
+	--color-ink-muted: #8ba0bd;
+	--color-line: #1c2b45;
+	--color-accent: #78a9ff;
+	--color-accent-ink: #071224;
+	--color-strong: #0f62fe;
+	--grain-opacity: 0;
+	--text-display: clamp(2.25rem, 5vw, 3.5rem);
+}
+
+/* theme-scaffold:css (injection point for new theme token blocks) */

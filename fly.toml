@@ -1,0 +1,39 @@
+# Fly.io deploy for the self-host (node) adapter — same Dockerfile as docker compose.
+#
+# One-time:   fly launch --no-deploy (accept/adjust name+region, keep this file)
+#             fly volumes create kikigaki_data --size 1   # name must match [mounts].source
+#             fly secrets set AI_SECRET=… TURNSTILE_SECRET=… (optional)
+# Deploy:     fly deploy            # point ORIGIN at the public URL afterwards
+#
+# SQLite + uploads live on the mounted volume (/app/data) — snapshots survive
+# deploys; `fly ssh console` gives you a shell for `sqlite3` backups.
+
+app = "kikigaki"          # ← your fly app name
+primary_region = "nrt"     # Tokyo; closest low-latency region for CN-facing traffic
+
+[build]
+dockerfile = "Dockerfile"
+
+[env]
+NODE_ENV = "production"
+SELF_HOST_DB = "/app/data/kikigaki.sqlite"
+SELF_HOST_MEDIA = "/app/data/media"
+SELF_HOST_STEPS = "10"
+# ORIGIN must become your real https origin (canonical URLs + CSP form):
+# ORIGIN = "https://kikigaki.example.com"
+
+[mounts]
+source = "kikigaki_data"
+destination = "/app/data"
+
+[http_service]
+internal_port = 3000
+force_https = true
+auto_stop_machines = "stop"
+auto_start_machines = true
+min_machines_running = 0 # hobby-friendly scale-to-zero; set 1 for steady latency
+processes = ["app"]
+
+[[vm]]
+size = "shared-cpu-1x"
+memory = "256mb"

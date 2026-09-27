@@ -1,0 +1,15 @@
+{
+	"nav": [
+		{ "href": "/", "label": "Front" },
+		{ "href": "/blog", "label": "Stories" },
+		{ "href": "/series", "label": "Series" },
+		{ "href": "/search", "label": "Search" },
+		{ "href": "/about", "label": "Masthead" }
+	],
+	"mastNote": "The Kikigaki Daily — an independent newsroom covering life on the edge. Founded 2024. Reader-funded, no ads, no algorithm.",
+	"newsdesk": {
+		"email": "desk@kikigaki.example",
+		"tipline": "tips@kikigaki.example",
+		"note": "Spotted something worth a story? Our inbox is open and we credit every tip we run."
+	}
+}

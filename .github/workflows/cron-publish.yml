@@ -1,0 +1,23 @@
+name: Cron — Scheduled Posts
+
+# 排程發文保鮮：每 10 分鐘打一次 publish-due 端點，讓無流量時段也能準時發布。
+# 需要：repository secret CRON_SECRET（與 Pages 環境變數/secret 同值）。
+# 手動測試：Actions → Cron — Scheduled Posts → Run workflow。
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  publish-due:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Trigger due scheduled posts
+        run: |
+          RESP=$(curl -s -o /tmp/out.json -w '%{http_code}' -X POST \
+            -H "x-cron-key: ${{ secrets.CRON_SECRET }}" \
+            你的站 /api/cron/publish-due（例：https://<project>.pages.dev/api/cron/publish-due; the Cloudflare Pages domain))
+          cat /tmp/out.json; echo
+          if [ "$RESP" != "200" ]; then echo "unexpected status $RESP"; exit 1; fi

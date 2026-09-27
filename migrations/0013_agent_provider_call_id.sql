@@ -1,0 +1,1 @@
+ALTER TABLE `agent_tool_calls` ADD `provider_call_id` text DEFAULT '' NOT NULL;

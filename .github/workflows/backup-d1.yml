@@ -1,0 +1,90 @@
+name: Backup — D1 daily export
+
+# 每日備份 production D1。目的地三選一（repo Variables 設定）：
+#   BACKUP_DEST=artifact（預設）→ GitHub Actions artifact，保留 14 天
+#   BACKUP_DEST=r2   + R2_BUCKET=<bucket 名> → Cloudflare R2（d1/ 前綴；token 需 R2 寫權限）
+#   BACKUP_DEST=repo + BACKUP_REPO=<owner/repo>（專用私有備份 repo）
+#                    + secret BACKUP_TOKEN（fine-grained PAT：只授權該 repo、Contents 讀寫）
+#                    → dump 以 git commit 推入該 repo 的 d1/ 目錄（永久保存、含歷史）
+# 需要 secrets：CLOUDFLARE_API_TOKEN、CLOUDFLARE_ACCOUNT_ID——與 ci.yml 共用。
+# 手動補備份：Actions → Backup — D1 daily export → Run workflow。
+
+on:
+  schedule:
+    - cron: '30 16 * * *' # 每日 16:30 UTC（台北 00:30）
+  workflow_dispatch:
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Export D1 (remote)
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          pnpm install --frozen-lockfile
+          STAMP=$(date -u +%Y%m%d-%H%M%S)
+          pnpm exec wrangler d1 export "${{ vars.D1_DATABASE || 'kikigaki' }}" --remote --output "backup-$STAMP.sql"
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          wc -c "backup-$STAMP.sql"
+
+      - name: Upload artifact (retention 14 days)
+        if: ${{ vars.BACKUP_DEST != 'r2' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: d1-backup-${{ env.STAMP }}
+          path: backup-*.sql
+          retention-days: 14
+
+      - name: Push to R2 bucket
+        if: ${{ vars.BACKUP_DEST == 'r2' }}
+
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "${{ vars.R2_BUCKET }}" ]; then echo "R2_BUCKET variable not set"; exit 1; fi
+          pnpm exec wrangler r2 object put "${{ vars.R2_BUCKET }}/d1/backup-$STAMP.sql" \
+            --file "backup-$STAMP.sql" --remote --content-type "application/sql"
+          echo "backup uploaded to r2://${{ vars.R2_BUCKET }}/d1/backup-$STAMP.sql"
+
+      - name: Checkout backup repository
+        if: ${{ vars.BACKUP_DEST == 'repo' }}
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.BACKUP_REPO }}
+          token: ${{ secrets.BACKUP_TOKEN }}
+          path: backup-repo
+
+      - name: Push dump to backup repository
+        if: ${{ vars.BACKUP_DEST == 'repo' }}
+        working-directory: backup-repo
+        run: |
+          if [ -z "${{ vars.BACKUP_REPO }}" ] || [ -z "${{ secrets.BACKUP_TOKEN }}" ]; then
+            echo "BACKUP_REPO variable / BACKUP_TOKEN secret not set"; exit 1
+          fi
+          mkdir -p d1
+          cp "../backup-$STAMP.sql" d1/
+          git config user.name "kikigaki-backup[bot]"
+          git config user.email "kikigaki-backup@users.noreply.github.com"
+          git add d1/
+          git commit -m "d1 backup $STAMP" || echo "nothing new to commit"
+          git push
+
+      - name: Restore hint
+        run: |
+          echo "還原：wrangler d1 execute kikigaki --remote --file=backup-$STAMP.sql"
+          echo "（或建異地 DB：wrangler d1 create kikigaki-restore 後 --remote 匯入）"

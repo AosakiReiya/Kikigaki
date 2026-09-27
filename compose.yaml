@@ -1,0 +1,26 @@
+services:
+  kikigaki:
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      - kikigaki-data:/app/data
+    environment:
+      # 反向代理（Caddy/nginx/Traefik）終端 https 時，改成你的正式 Origin
+      ORIGIN: http://localhost:3000
+      # 憑證加密主金鑰（AI provider / GSC / Email API key 的 AES-GCM 主鑰）——務必改掉
+      AI_SECRET: change-me-in-production
+      # Agent 每 advance 步數（self-host 預設 10；反代 timeout 短可調低如 5）
+      SELF_HOST_STEPS: '10'
+      # 排程發文保鮮端點（可配合 host cron 打 /api/cron/publish-due；不設則僅 lazy publish）
+      CRON_SECRET: ''
+      # Turnstile（選配；不設＝評論跳過 Turnstile 驗證）
+      TURNSTILE_SECRET: ''
+      TURNSTILE_HOSTNAMES: ''
+      # 資料檔位置（volume 內）
+      SELF_HOST_DB: /app/data/kikigaki.sqlite
+      SELF_HOST_MEDIA: /app/data/media
+    restart: unless-stopped
+
+volumes:
+  kikigaki-data:

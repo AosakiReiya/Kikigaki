@@ -1,0 +1,31 @@
+# Package Managers
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Build output
+.svelte
+.svelte-kit
+build
+.output
+.vercel
+.netlify
+
+# Generated
+src/lib/paraglide
+project.inlang/cache
+project.inlang/.meta.json
+.wrangler
+drizzle
+scripts/generated
+migrations/meta
+
+# AI agent/skill reference docs (not project source)
+.github/skills
+.github/agents
+
+# Miscellaneous
+/static/
+.e2e-archive

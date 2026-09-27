@@ -1,0 +1,15 @@
+# 安全頭（CSP/XFO/nosniff/…）的單一來源在 src/hooks.server.ts handleSecurity ——
+# 那裏可按環境分支（dev 跳過 CSP）且 Node/Docker 自架同樣生效；
+# 此檔只留靜態快取規則，避免雙處漂移（曾經 XFO 兩處不一致）。
+
+/assets/*
+	Cache-Control: public, max-age=31536000, immutable
+
+/covers/*
+	Cache-Control: public, max-age=86400
+
+/rss.xml
+	Cache-Control: public, max-age=3600
+
+/sitemap.xml
+	Cache-Control: public, max-age=3600

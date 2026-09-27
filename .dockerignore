@@ -1,0 +1,11 @@
+node_modules
+build
+.svelte
+.svelte-kit
+.wrangler
+data
+d1.sqlite
+*.log
+.github
+docs
+static-backup

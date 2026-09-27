@@ -1,0 +1,63 @@
+/**
+ * Card kit global hooks (Phase 54).
+ * Card.svelte's skin is scoped; but the glow ::after must hit both the Card root and the PostRow root
+ * (two components, two scopes), so one global copy rules — glow changes happen only here.
+ */
+.card[data-effect='glow']::after,
+.card[data-effect='glow-tilt']::after,
+.post-row[data-glow]::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.25s ease;
+	background: radial-gradient(
+		22rem 16rem at var(--mx, 50%) var(--my, 50%),
+		color-mix(in srgb, var(--color-strong) 13%, transparent),
+		transparent 62%
+	);
+}
+
+.card[data-effect='glow']:hover::after,
+.card[data-effect='glow-tilt']:hover::after,
+.post-row[data-glow]:hover::after {
+	opacity: 1;
+}
+
+/* ---- no-media decoration: the single site-wide definition, shared by Card and PostRow ---- */
+span.card-media.card-media--deco,
+li.post-row-item .row-art--deco {
+	display: grid;
+	place-items: center;
+	background:
+		radial-gradient(
+			120% 90% at 85% -10%,
+			color-mix(in srgb, var(--color-strong) 30%, transparent),
+			transparent 62%
+		),
+		linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--color-accent) 20%, var(--color-bg-elevated)),
+			var(--color-bg-elevated) 60%
+		);
+}
+
+.card-glyph {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	place-items: center;
+	/* pure decoration layer: inset:0 full coverage; without pointer blocking it would swallow every in-card interaction */
+	pointer-events: none;
+	user-select: none;
+	font-size: clamp(2.25rem, 4.5vw, 3rem);
+	line-height: 1;
+	color: color-mix(in srgb, var(--color-strong) 70%, var(--color-ink));
+	transition: color 0.22s ease;
+}
+
+.card:hover .card-glyph,
+.post-row:hover .card-glyph {
+	color: var(--color-strong);
+}

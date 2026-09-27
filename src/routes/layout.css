@@ -1,0 +1,279 @@
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/fira-mono/400.css';
+@import '../lib/styles/prose.css';
+@import '../lib/styles/themes.css';
+@import '../lib/styles/forms.css';
+
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+/* dark: variant aligned with the manual theme system (see stores/theme.ts) */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+/* ------------------------------------------------------------------ */
+/* design tokens: Light*/
+/* ------------------------------------------------------------------ */
+:root {
+	color-scheme: light;
+
+	--color-bg: #faf9f6;
+	--color-bg-elevated: #ffffff;
+	--color-ink: #141414;
+	--color-ink-muted: #6b6963;
+	--color-line: #e4e2db;
+
+	/* accent color shared by both themes (electric lime) */
+	--color-accent: #d4ff3f;
+	--color-accent-ink: #141414;
+
+	/* strong/emphasis text (light = deep vivid green of the lime family, 6.6:1; dark overrides to lime itself) */
+	--color-strong: #3f6212;
+
+	--font-display:
+		'Space Grotesk', -apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei',
+		sans-serif;
+	--font-body:
+		-apple-system, BlinkMacSystemFont, 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC',
+		sans-serif;
+	--font-mono: 'Fira Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+	--text-display: clamp(3rem, 9vw, 8rem);
+	--text-h1: clamp(2.25rem, 5vw, 4rem);
+	--text-h2: clamp(1.5rem, 3vw, 2.25rem);
+
+	--grain-opacity: 0.035;
+
+	/* card hover shadow (light: contact shadow + large soft lime-tinted shadow, killing the gray-mud feel; dark keeps the old recipe) */
+	--shadow-card-hover:
+		0 1px 2px rgb(20 20 20 / 6%),
+		0 16px 36px color-mix(in srgb, var(--color-strong) 16%, rgb(20 20 20 / 7%));
+}
+
+/* ------------------------------------------------------------------ */
+/* design tokens: Dark (default theme; see the app.html pre-paint script)*/
+/* ------------------------------------------------------------------ */
+[data-theme='dark'] {
+	color-scheme: dark;
+
+	--color-bg: #0a0a0b;
+	--color-bg-elevated: #131316;
+	--color-ink: #f2f0ea;
+	--color-ink-muted: #8a8880;
+	--color-line: #26262a;
+
+	--grain-opacity: 0.05;
+
+	--shadow-card-hover: 0 14px 34px rgb(0 0 0 / 9%);
+
+	--color-strong: var(--color-accent);
+}
+
+/* Tailwind utility-class mapping (inline → utilities reference the runtime variables above directly) */
+@theme inline {
+	--color-bg: var(--color-bg);
+	--color-bg-elevated: var(--color-bg-elevated);
+	--color-ink: var(--color-ink);
+	--color-ink-muted: var(--color-ink-muted);
+	--color-line: var(--color-line);
+	--color-accent: var(--color-accent);
+	--color-accent-ink: var(--color-accent-ink);
+
+	--font-display: var(--font-display);
+	--font-body: var(--font-body);
+	--font-mono: var(--font-mono);
+}
+
+/* ------------------------------------------------------------------ */
+/* base globals*/
+/* ------------------------------------------------------------------ */
+html {
+	/* don't use scroll-behavior: smooth — it fights the transition pipeline's programmatic scrolling (standard practice for GSAP transition sites;
+	   when smooth scrolling is needed use Lenis (optional in v1.5), fully JS-controlled */
+	scroll-behavior: auto;
+
+	/* style container for the card-mode flag: PostRow collapses card styles via @container style(--card-layout:1).
+	   media (touch/narrow screens) and app.html UA tablet detection both set it to 1. */
+	container-type: style;
+}
+
+/* touch devices (phones/tablets) or narrow screens → card mode; UA tablets get --card-layout set by app.html pre-paint */
+@media (max-width: 767px), (pointer: coarse), (hover: none) {
+	html {
+		--card-layout: 1;
+	}
+}
+
+body {
+	background-color: var(--color-bg);
+	color: var(--color-ink);
+	font-family: var(--font-body);
+	font-size: 1.0625rem;
+	line-height: 1.75;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+	transition:
+		background-color 0.35s ease,
+		color 0.35s ease;
+}
+
+/* subtle noise texture (fixed full-screen layer, never blocks interaction) */
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 90;
+	pointer-events: none;
+	opacity: var(--grain-opacity);
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+	background-color: var(--color-accent);
+	color: var(--color-accent-ink);
+}
+
+:focus-visible {
+	outline: 2px solid var(--color-accent);
+	outline-offset: 2px;
+	border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------ */
+/* links*/
+/* ------------------------------------------------------------------ */
+.prose-link,
+.link-animated {
+	text-decoration: none;
+	background-image: linear-gradient(currentColor, currentColor);
+	background-size: 0% 1px;
+	background-position: 0 100%;
+	background-repeat: no-repeat;
+	transition: background-size 0.3s ease;
+}
+
+.prose-link:hover,
+.link-animated:hover {
+	background-size: 100% 1px;
+}
+
+/* ------------------------------------------------------------------ */
+/* heading sizes*/
+/* ------------------------------------------------------------------ */
+h1,
+h2,
+h3 {
+	font-family: var(--font-display);
+	letter-spacing: -0.025em;
+	line-height: 1.15;
+	color: var(--color-ink);
+}
+
+/* editorial layout blocks */
+.section-heading {
+	display: flex;
+	align-items: baseline;
+	gap: 0.75rem;
+	font-family: var(--font-display);
+	font-size: var(--text-h2);
+	font-weight: 700;
+	letter-spacing: -0.02em;
+}
+
+.section-heading .index {
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--color-ink-muted);
+	font-variant-numeric: tabular-nums;
+}
+
+/* mask reveal: heading entrance container (pairs with the maskReveal action) */
+.mask-reveal {
+	overflow: hidden;
+}
+
+/* preloader hold: first load masks content (class added by the app.html script, removed by the preloader) */
+html.preloading #page-content {
+	opacity: 0;
+}
+
+/* reduced motion: disable smooth scrolling and background transitions */
+@media (prefers-reduced-motion: reduce) {
+	html {
+		scroll-behavior: auto;
+	}
+
+	body {
+		transition: none;
+	}
+
+	/* 59B: global fallback — CSS loop animations (typing dots/breathing/spinning/blinking/drawer·modal shifts)
+	   all slowed down too; GSAP pipelines already have JS gates */
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+	}
+}
+
+/* ---- ⓘ tooltip (admin explainer marker; shared by settings and the post editor, consolidated in Phase 70.6) ---- */
+.seo-tip {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.0625rem;
+	height: 1.0625rem;
+	margin-left: 0.375rem;
+	border: 1px solid var(--color-line);
+	border-radius: 9999px;
+	color: var(--color-ink-muted);
+	font-size: 0.6875rem;
+	font-weight: 400;
+	cursor: help;
+	vertical-align: middle;
+}
+
+.seo-tip-pop {
+	display: none;
+	position: absolute;
+	top: calc(100% + 0.375rem);
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 30;
+	width: min(20rem, 72vw);
+	padding: 0.625rem 0.75rem;
+	border: 1px solid var(--color-line);
+	border-radius: 0.5rem;
+	background: var(--color-bg-elevated);
+	color: var(--color-ink);
+	font-size: 0.75rem;
+	line-height: 1.6;
+	text-align: left;
+	white-space: normal;
+	box-shadow: 0 6px 24px rgb(0 0 0 / 18%);
+}
+
+.seo-tip:hover .seo-tip-pop,
+.seo-tip:focus .seo-tip-pop,
+.seo-tip:focus-visible .seo-tip-pop {
+	display: block;
+}
+
+/* P2 (78c): DB-theme surface swap feedback — one short fade when compiled packs land */
+@keyframes db-theme-fade {
+	from {
+		opacity: 0.25;
+	}
+}
+main.swap-fade {
+	animation: db-theme-fade 0.55s var(--ease-out-expo, ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+	main.swap-fade {
+		animation: none;
+	}
+}

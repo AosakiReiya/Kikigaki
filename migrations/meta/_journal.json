@@ -1,0 +1,307 @@
+{
+ "version": "7",
+ "dialect": "sqlite",
+ "entries": [
+  {
+   "idx": 0,
+   "version": "6",
+   "when": 1787590445132,
+   "tag": "0000_closed_colonel_america",
+   "breakpoints": true
+  },
+  {
+   "idx": 1,
+   "version": "6",
+   "when": 1787644398117,
+   "tag": "0001_happy_corsair",
+   "breakpoints": true
+  },
+  {
+   "idx": 2,
+   "version": "6",
+   "when": 1787661065338,
+   "tag": "0002_cool_jocasta",
+   "breakpoints": true
+  },
+  {
+   "idx": 3,
+   "version": "6",
+   "when": 1787733515689,
+   "tag": "0003_panoramic_xavin",
+   "breakpoints": true
+  },
+  {
+   "idx": 4,
+   "version": "6",
+   "when": 1787737727691,
+   "tag": "0004_normal_shinobi_shaw",
+   "breakpoints": true
+  },
+  {
+   "idx": 5,
+   "version": "6",
+   "when": 1787816795923,
+   "tag": "0005_lonely_dexter_bennett",
+   "breakpoints": true
+  },
+  {
+   "idx": 6,
+   "version": "6",
+   "when": 1787824869241,
+   "tag": "0006_curious_rocket_racer",
+   "breakpoints": true
+  },
+  {
+   "idx": 7,
+   "version": "6",
+   "when": 1787826045200,
+   "tag": "0007_swift_stephen_strange",
+   "breakpoints": true
+  },
+  {
+   "idx": 8,
+   "version": "6",
+   "when": 1787855055923,
+   "tag": "0008_youthful_malice",
+   "breakpoints": true
+  },
+  {
+   "idx": 9,
+   "version": "6",
+   "when": 1787890286993,
+   "tag": "0009_clammy_unicorn",
+   "breakpoints": true
+  },
+  {
+   "idx": 10,
+   "version": "6",
+   "when": 1787899106399,
+   "tag": "0010_cooing_dormammu",
+   "breakpoints": true
+  },
+  {
+   "idx": 11,
+   "version": "6",
+   "when": 1787920658329,
+   "tag": "0011_yielding_elektra",
+   "breakpoints": true
+  },
+  {
+   "idx": 12,
+   "version": "6",
+   "when": 1787929893185,
+   "tag": "0012_agent_runtime",
+   "breakpoints": true
+  },
+  {
+   "idx": 13,
+   "version": "6",
+   "when": 1787930853628,
+   "tag": "0013_agent_provider_call_id",
+   "breakpoints": true
+  },
+  {
+   "idx": 14,
+   "version": "6",
+   "when": 1787972005832,
+   "tag": "0014_agent_project_budget",
+   "breakpoints": true
+  },
+  {
+   "idx": 15,
+   "version": "6",
+   "when": 1788074497472,
+   "tag": "0015_p28_budget_loginlock",
+   "breakpoints": true
+  },
+  {
+   "idx": 16,
+   "version": "6",
+   "when": 1788103760280,
+   "tag": "0016_ai_models_api_cap",
+   "breakpoints": true
+  },
+  {
+   "idx": 17,
+   "version": "6",
+   "when": 1788107913231,
+   "tag": "0017_deepseek_family_reasoning",
+   "breakpoints": true
+  },
+  {
+   "idx": 18,
+   "version": "6",
+   "when": 1788147287596,
+   "tag": "0018_mcp_remote",
+   "breakpoints": true
+  },
+  {
+   "idx": 19,
+   "version": "6",
+   "when": 1788157037408,
+   "tag": "0019_agent_definitions",
+   "breakpoints": true
+  },
+  {
+   "idx": 20,
+   "version": "6",
+   "when": 1788165575938,
+   "tag": "0020_permission_rules",
+   "breakpoints": true
+  },
+  {
+   "idx": 21,
+   "version": "6",
+   "when": 1788320144639,
+   "tag": "0021_posts_fts",
+   "breakpoints": true
+  },
+  {
+   "idx": 22,
+   "version": "6",
+   "when": 1788406663954,
+   "tag": "0022_posts_type",
+   "breakpoints": true
+  },
+  {
+   "idx": 23,
+   "version": "6",
+   "when": 1788450000562,
+   "tag": "0023_categories",
+   "breakpoints": true
+  },
+  {
+   "idx": 24,
+   "version": "6",
+   "when": 1788457073498,
+   "tag": "0024_series",
+   "breakpoints": true
+  },
+  {
+   "idx": 25,
+   "version": "6",
+   "when": 1788488556468,
+   "tag": "0025_series_only",
+   "breakpoints": true
+  },
+  {
+   "idx": 26,
+   "version": "6",
+   "when": 1788515235916,
+   "tag": "0026_series_cover_orientation",
+   "breakpoints": true
+  },
+  {
+   "idx": 27,
+   "version": "6",
+   "when": 1788550484966,
+   "tag": "0027_series_drop_orientation",
+   "breakpoints": true
+  },
+  {
+   "idx": 28,
+   "version": "6",
+   "when": 1788640000000,
+   "tag": "0028_post_seo",
+   "breakpoints": true
+  },
+  {
+   "idx": 29,
+   "version": "6",
+   "when": 1788650000000,
+   "tag": "0029_seo_author",
+   "breakpoints": true
+  },
+  {
+   "idx": 30,
+   "version": "6",
+   "when": 1788660000000,
+   "tag": "0030_gsc_cache",
+   "breakpoints": true
+  },
+  {
+   "idx": 31,
+   "version": "6",
+   "when": 1788660000001,
+   "tag": "0031_email_logs",
+   "breakpoints": true
+  },
+  {
+   "idx": 32,
+   "version": "6",
+   "when": 1788660000002,
+   "tag": "0032_email_templates",
+   "breakpoints": true
+  },
+  {
+   "idx": 33,
+   "version": "6",
+   "when": 1788660000003,
+   "tag": "0033_comment_replies",
+   "breakpoints": true
+  },
+  {
+   "idx": 34,
+   "version": "6",
+   "when": 1788660000004,
+   "tag": "0034_subscribers",
+   "breakpoints": true
+  },
+  {
+   "idx": 35,
+   "version": "6",
+   "when": 1788660000005,
+   "tag": "0035_db_themes",
+   "breakpoints": true
+  },
+  {
+   "idx": 36,
+   "version": "6",
+   "when": 1788660000006,
+   "tag": "0036_theme_behaviors",
+   "breakpoints": true
+  },
+  {
+   "idx": 37,
+   "version": "6",
+   "when": 1788660000037,
+   "tag": "0037_post_tags_tag_index",
+   "breakpoints": true
+  },
+  {
+   "idx": 38,
+   "version": "6",
+   "when": 1788660000038,
+   "tag": "0038_content_types",
+   "breakpoints": true
+  },
+  {
+   "idx": 39,
+   "version": "6",
+   "when": 1788660000039,
+   "tag": "0039_commerce",
+   "breakpoints": true
+  },
+  {
+   "idx": 40,
+   "version": "6",
+   "when": 1758000000000,
+   "tag": "0040_refunds",
+   "breakpoints": true
+  },
+  {
+   "idx": 41,
+   "version": "6",
+   "when": 1758100000000,
+   "tag": "0041_support",
+   "breakpoints": true
+  },
+  {
+   "idx": 42,
+   "version": "6",
+   "when": 1758200000000,
+   "tag": "0042_order_ip",
+   "breakpoints": true
+  }
+ ]
+}

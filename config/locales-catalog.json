@@ -1,0 +1,33 @@
+{
+	"zh-tw": {
+		"label": "繁體中文",
+		"hreflang": "zh-Hant",
+		"bcp47": "zh-Hant-TW",
+		"base": true
+	},
+	"zh-cn": {
+		"label": "简体中文",
+		"hreflang": "zh-Hans",
+		"bcp47": "zh-Hans-CN"
+	},
+	"en": {
+		"label": "English",
+		"hreflang": "en",
+		"bcp47": "en-US"
+	},
+	"jp": {
+		"label": "日本語",
+		"hreflang": "ja",
+		"bcp47": "ja-JP"
+	},
+	"ko": {
+		"label": "한국어",
+		"hreflang": "ko",
+		"bcp47": "ko-KR"
+	},
+	"es": {
+		"label": "Español",
+		"hreflang": "es",
+		"bcp47": "es-419"
+	}
+}

@@ -1,0 +1,22 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "kikigaki"
+compatibility_date = "2026-08-20"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".svelte/cloudflare"
+
+# Cloudflare D1 — 博客元數據 / 評論 / 會話 / 統計
+[[d1_databases]]
+binding = "DB"
+database_name = "kikigaki"
+database_id = ""
+migrations_dir = "./migrations"
+
+# Cloudflare R2 — 圖片 / 附件
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "kikigaki-assets"
+
+# AI provider key 加密主金鑰（本地開發；production 以 wrangler secret put AI_SECRET 設定）
+[vars]
+CRON_SECRET = "dev-cron-test" # dev only；production 用 Pages secret 同名
+AI_SECRET = "dev-only-insecure-ai-secret"
