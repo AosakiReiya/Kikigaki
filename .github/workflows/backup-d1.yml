@@ -9,10 +9,10 @@ name: Backup — D1 daily export
 # 需要 secrets：CLOUDFLARE_API_TOKEN、CLOUDFLARE_ACCOUNT_ID——與 ci.yml 共用。
 # 手動補備份：Actions → Backup — D1 daily export → Run workflow。
 
-on:
-  schedule:
-    - cron: '30 16 * * *' # 每日 16:30 UTC（台北 00:30）
-  workflow_dispatch:
+#on:
+#  schedule:
+#    - cron: '30 16 * * *' # 每日 16:30 UTC（台北 00:30）
+#  workflow_dispatch:
 
 jobs:
   export:
