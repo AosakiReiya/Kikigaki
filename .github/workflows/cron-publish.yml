@@ -4,10 +4,10 @@ name: Cron — Scheduled Posts
 # 需要：repository secret CRON_SECRET（與 Pages 環境變數/secret 同值）。
 # 手動測試：Actions → Cron — Scheduled Posts → Run workflow。
 
-on:
-  schedule:
-    - cron: '*/10 * * * *'
-  workflow_dispatch:
+#on:
+#  schedule:
+#    - cron: '*/10 * * * *'
+#  workflow_dispatch:
 
 jobs:
   publish-due:
