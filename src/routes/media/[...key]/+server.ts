@@ -7,7 +7,9 @@ import type { RequestHandler } from './$types';
 export const GET: RequestHandler = async ({ params, platform }) => {
 	const bucket = platform?.env.BUCKET;
 	const key = params.key;
-	if (!bucket || !key) return new Response(null, { status: 404 });
+	// Paid deliveries require a token; database backups are never public assets.
+	if (!bucket || !key || /^(?:goods|d1|backups)\//.test(key))
+		return new Response(null, { status: 404 });
 
 	const obj = await bucket.get(key);
 	if (!obj) return new Response(null, { status: 404 });

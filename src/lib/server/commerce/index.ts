@@ -213,23 +213,34 @@ export async function attachProvider(
 					fileKey: ''
 				}
 			];
+	// Reserve the pending order before calling a provider so concurrent requests cannot attach twice.
+	const reservation = `reserved:${crypto.randomUUID()}`;
+	const claimed = await db
+		.prepare(
+			"UPDATE orders SET provider=?, provider_session=?, updated_at=? WHERE id=? AND status='pending' AND provider_session IS NULL RETURNING id"
+		)
+		.bind(provider.name, reservation, Date.now(), orderId)
+		.first<string>('id');
+	if (!claimed) return { error: 'already_attached' };
 	try {
 		const session = await provider.createSession(
 			{ id: orderId, currency: order.currency },
 			lines,
 			origin
 		);
-		await kit
-			.update(orders)
-			.set({ provider: provider.name, providerSession: session.sessionRef, updatedAt: new Date() })
-			.where(eq(orders.id, orderId))
+		await db
+			.prepare(
+				'UPDATE orders SET provider_session=?, updated_at=? WHERE id=? AND provider_session=?'
+			)
+			.bind(session.sessionRef, Date.now(), orderId, reservation)
 			.run();
 		return { redirectUrl: session.redirectUrl };
 	} catch (e) {
-		await kit
-			.update(orders)
-			.set({ status: 'failed', updatedAt: new Date() })
-			.where(eq(orders.id, orderId))
+		await db
+			.prepare(
+				"UPDATE orders SET status='failed', updated_at=? WHERE id=? AND status='pending' AND provider_session=?"
+			)
+			.bind(Date.now(), orderId, reservation)
 			.run();
 		return { error: `provider_error:${String((e as Error)?.message ?? e).slice(0, 48)}` };
 	}
@@ -287,35 +298,37 @@ export async function markPaid(
 	let order = await kit.select().from(orders).where(eq(orders.providerSession, sessionRef)).get();
 	if (!order) order = await kit.select().from(orders).where(eq(orders.id, sessionRef)).get();
 	if (!order) return { ok: false, error: 'no_such_order' };
-	if (order.status === 'paid') return { ok: true };
-	if (order.status !== 'pending') return { ok: false, error: `status_${order.status}` };
+	if (order.status !== 'pending' && order.status !== 'paid')
+		return { ok: false, error: `status_${order.status}` };
 	const now = new Date();
-	await kit
-		.update(orders)
-		.set({
-			status: 'paid',
-			email: email || order.email,
-			providerRef: providerRef || order.providerRef,
-			updatedAt: now
-		})
-		.where(eq(orders.id, order.id))
-		.run();
 	const items = await kit.select().from(orderItems).where(eq(orderItems.orderId, order.id)).all();
-	for (const it of items) {
-		const token = [...crypto.getRandomValues(new Uint8Array(24))]
-			.map((b) => b.toString(16).padStart(2, '0'))
-			.join('');
-		await kit
-			.insert(deliveryTokens)
-			.values({
-				token,
-				orderItemId: it.id,
-				createdAt: now,
-				expiresAt: new Date(now.getTime() + 90 * 86_400_000),
-				downloads: 0
-			})
-			.onConflictDoNothing()
-			.run();
+	// Settlement and delivery issuance commit together; retries cannot resurrect refunded orders.
+	const result = await db.batch([
+		db
+			.prepare(
+				"UPDATE orders SET status='paid', email=?, provider_ref=?, updated_at=? WHERE id=? AND status='pending'"
+			)
+			.bind(email || order.email, providerRef || order.providerRef, now.getTime(), order.id),
+		...items.map((item) => {
+			const token = [...crypto.getRandomValues(new Uint8Array(24))]
+				.map((byte) => byte.toString(16).padStart(2, '0'))
+				.join('');
+			return db
+				.prepare(
+					"INSERT INTO delivery_tokens (token,order_item_id,created_at,expires_at,downloads) SELECT ?,?,?,?,0 WHERE EXISTS (SELECT 1 FROM orders WHERE id=? AND status='paid') ON CONFLICT(order_item_id) DO NOTHING"
+				)
+				.bind(token, item.id, now.getTime(), now.getTime() + 90 * 86_400_000, order.id);
+		})
+	]);
+	if (result[0].meta.changes !== 1) {
+		const current = await kit
+			.select({ status: orders.status })
+			.from(orders)
+			.where(eq(orders.id, order.id))
+			.get();
+		return current?.status === 'paid'
+			? { ok: true }
+			: { ok: false, error: `status_${current?.status ?? 'missing'}` };
 	}
 	void emit(
 		'order:paid',
@@ -359,18 +372,17 @@ export async function markRefunded(
 	if (!order) return { ok: false, error: 'no_such_order' };
 	if (order.status === 'refunded') return { ok: true };
 	if (order.status !== 'paid') return { ok: false, error: `status_${order.status}` };
-	const items = await kit
-		.select({ id: orderItems.id })
-		.from(orderItems)
-		.where(eq(orderItems.orderId, order.id))
-		.all();
-	for (const it of items)
-		await kit.delete(deliveryTokens).where(eq(deliveryTokens.orderItemId, it.id)).run();
-	await kit
-		.update(orders)
-		.set({ status: 'refunded', updatedAt: new Date() })
-		.where(eq(orders.id, order.id))
-		.run();
+	// Revoke the order and all tokens atomically; rollback both if either write fails.
+	await db.batch([
+		db
+			.prepare("UPDATE orders SET status='refunded', updated_at=? WHERE id=? AND status='paid'")
+			.bind(Date.now(), order.id),
+		db
+			.prepare(
+				"DELETE FROM delivery_tokens WHERE order_item_id IN (SELECT id FROM order_items WHERE order_id=?) AND EXISTS (SELECT 1 FROM orders WHERE id=? AND status='refunded')"
+			)
+			.bind(order.id, order.id)
+	]);
 	return { ok: true };
 }
 

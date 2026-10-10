@@ -243,7 +243,11 @@ export async function refreshModels(
 	});
 	let payload: unknown;
 	try {
-		const res = await fetch(req.url, { headers: req.headers, signal: AbortSignal.timeout(15_000) });
+		const res = await fetch(req.url, {
+			headers: req.headers,
+			redirect: 'error',
+			signal: AbortSignal.timeout(15_000)
+		});
 		if (!res.ok) return { ok: false, error: `upstream_${res.status}` };
 		payload = await res.json();
 	} catch (e) {
@@ -515,6 +519,7 @@ export async function chat(
 	try {
 		const res = await fetch(req.url, {
 			method: req.body ? 'POST' : 'GET',
+			redirect: 'error',
 			headers: req.headers,
 			body: req.body,
 			signal: AbortSignal.timeout(90_000)
@@ -706,6 +711,7 @@ export async function chatWithTools(
 	try {
 		const res = await fetch(req.url, {
 			method: 'POST',
+			redirect: 'error',
 			headers: req.headers,
 			body: req.body,
 			signal: AbortSignal.timeout(120_000)
@@ -746,6 +752,7 @@ export async function streamChatWithTools(
 		try {
 			const res = await fetch(req.url, {
 				method: 'POST',
+				redirect: 'error',
 				headers: { ...req.headers, accept: 'text/event-stream' },
 				body: req.body,
 				signal: opts.signal ?? AbortSignal.timeout(120_000)

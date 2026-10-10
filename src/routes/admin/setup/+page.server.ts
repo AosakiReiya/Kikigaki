@@ -28,7 +28,7 @@ export const actions: Actions = {
 	default: async ({ request, platform, cookies }) => {
 		const db = platform?.env.DB;
 		if (!db) return fail(500, { error: '資料庫未配置', username: '' });
-		// double-check against races: of two concurrent first-run requests only one can create the account
+		// Fast rejection; the conditional insert below also guards concurrent requests.
 		if (await hasAnyUser(db))
 			return fail(403, { error: '管理員已存在，setup 已關閉', username: '' });
 
@@ -42,14 +42,15 @@ export const actions: Actions = {
 		if (password.length < 8) return fail(400, { error: '密碼至少 8 字元', username });
 		if (password !== confirm) return fail(400, { error: '兩次密碼不一致', username });
 
-		const kit = getDb(db);
 		const id = crypto.randomUUID();
-		await kit.insert(users).values({
-			id,
-			username,
-			passwordHash: await hashPassword(password),
-			role: 'admin'
-		});
+		const inserted = await db
+			.prepare(
+				"INSERT INTO users (id, username, password_hash, role, created_at) SELECT ?, ?, ?, 'admin', ? WHERE NOT EXISTS (SELECT 1 FROM users)"
+			)
+			.bind(id, username, await hashPassword(password), Date.now())
+			.run();
+		if (inserted.meta.changes !== 1)
+			return fail(403, { error: '管理員已存在，setup 已關閉', username });
 		const token = await createSession(db, id);
 		cookies.set(SESSION_COOKIE, token, sessionCookieOptions());
 		redirect(303, '/admin');

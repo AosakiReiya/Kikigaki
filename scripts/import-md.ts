@@ -18,7 +18,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../src/lib/server/frontmatter.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const contentDir = path.join(root, 'content', 'blog');
@@ -69,7 +69,7 @@ for (const file of files) {
 	if (TRANSLATION_LOCALES.some((l) => slug.endsWith(`.${l}`))) continue;
 
 	const raw = readFileSync(path.join(contentDir, file), 'utf-8');
-	const { data, content } = matter(raw);
+	const { data, content } = parseFrontmatter(raw);
 
 	const rawDate = data.date;
 	const date =
@@ -89,7 +89,7 @@ for (const file of files) {
 	for (const locale of TRANSLATION_LOCALES) {
 		const sidecar = `${slug}.${locale}.md`;
 		if (!files.includes(sidecar)) continue;
-		const side = matter(readFileSync(path.join(contentDir, sidecar), 'utf-8'));
+		const side = parseFrontmatter(readFileSync(path.join(contentDir, sidecar), 'utf-8'));
 		translations.push({
 			locale,
 			title: String(side.data.title ?? `${slug} (${locale})`),

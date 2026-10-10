@@ -16,8 +16,8 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run",
-		"backup:d1": "mkdir -p backups && wrangler d1 export kikigaki --remote --output=backups/kikigaki-$(date +%Y%m-%dT%H%M).sql",
-		"backup:d1:local": "mkdir -p backups && wrangler d1 export kikigaki --local --output=backups/kikigaki-local-$(date +%Y%m-%dT%H%M).sql",
+		"backup:d1": "node scripts/backup-d1.mjs --remote --output backups/kikigaki-$(date +%Y%m-%dT%H%M).sql",
+		"backup:d1:local": "node scripts/backup-d1.mjs --local --output backups/kikigaki-local-$(date +%Y%m-%dT%H%M).sql",
 		"storybook": "storybook dev -p 6006",
 		"build-storybook": "storybook build",
 		"db:push": "drizzle-kit push",
@@ -104,9 +104,21 @@
 		"chart.js": "^4.5.1",
 		"fflate": "^0.8.3",
 		"github-slugger": "^2.0.0",
-		"gray-matter": "^4.0.3",
 		"gsap": "^3.15.0",
-		"markdown-it": "^15.0.0",
-		"sanitize-html": "^2.17.7"
+		"markdown-it": "^15.0.2",
+		"sanitize-html": "^2.17.7",
+		"yaml": "^2.9.1"
+	},
+	"pnpm": {
+		"overrides": {
+			"cookie": "0.7.2",
+			"devalue": "5.9.3",
+			"undici": "7.29.1",
+			"brace-expansion": "5.0.12",
+			"source-map-js": "1.2.2",
+			"postcss-selector-parser": "7.1.6",
+			"sharp": "0.35.5",
+			"esbuild@<0.25.0": "^0.25.12"
+		}
 	}
 }

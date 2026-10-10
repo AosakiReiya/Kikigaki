@@ -1,13 +1,13 @@
 name: Cron — Scheduled Posts
 
-# 排程發文保鮮：每 10 分鐘打一次 publish-due 端點，讓無流量時段也能準時發布。
-# 需要：repository secret CRON_SECRET（與 Pages 環境變數/secret 同值）。
-# 手動測試：Actions → Cron — Scheduled Posts → Run workflow。
-
+# Keep scheduling disabled until a site URL and the rotated cron secret are configured.
 #on:
 #  schedule:
 #    - cron: '*/10 * * * *'
 #  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   publish-due:
@@ -15,9 +15,15 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Trigger due scheduled posts
+        env:
+          PRODUCTION_URL: ${{ vars.PRODUCTION_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          RESP=$(curl -s -o /tmp/out.json -w '%{http_code}' -X POST \
-            -H "x-cron-key: ${{ secrets.CRON_SECRET }}" \
-            你的站 /api/cron/publish-due（例：https://<project>.pages.dev/api/cron/publish-due; the Cloudflare Pages domain))
-          cat /tmp/out.json; echo
-          if [ "$RESP" != "200" ]; then echo "unexpected status $RESP"; exit 1; fi
+          if [[ ! "$PRODUCTION_URL" =~ ^https:// ]] || [ -z "$CRON_SECRET" ]; then
+            echo 'Configure an HTTPS PRODUCTION_URL and CRON_SECRET before enabling this workflow.'
+            exit 1
+          fi
+          RESP=$(curl --fail-with-body --silent --show-error -o /tmp/out.json -w '%{http_code}' -X POST \
+            -H "x-cron-key: $CRON_SECRET" "${PRODUCTION_URL%/}/api/cron/publish-due")
+          cat /tmp/out.json
+          [ "$RESP" = '200' ] || exit 1

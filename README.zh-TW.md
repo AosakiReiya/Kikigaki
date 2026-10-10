@@ -4,7 +4,6 @@
 
 Awwwards 級個人博客。SvelteKit + Svelte 5（runes）+ Tailwind CSS v4 + GSAP，全站部署在 Cloudflare（Pages + D1 + R2）。
 
-
 ## 動畫實錄
 
 下列畫面全部來自內建示範內容（`pnpm seed:demo`）——零個人資料：
@@ -45,7 +44,7 @@ Awwwards 級個人博客。SvelteKit + Svelte 5（runes）+ Tailwind CSS v4 + GS
 
 ## 前置需求
 
-- Node 22+
+- Node 22.13+
 - pnpm 10+
 - 一個 Cloudflare 帳號（用於 D1 / R2 / Pages）
 
@@ -160,15 +159,9 @@ echo 'ALLOW_MOCK_PAYMENTS="1"' >> .dev.vars
 
 ## 資料庫備份
 
-`.github/workflows/backup-d1.yml`：每日 16:30 UTC 將 production D1 export 成 SQL dump。
-目的地由 repo **Variables** 選擇（需 `CLOUDFLARE_API_TOKEN`／`CLOUDFLARE_ACCOUNT_ID` secrets，與 CI 共用）：
+備份工作流程預設停用，設定好私密目的地後才啟用。資料庫備份包含私密資料，只能存到私有備份 repository，或未開啟公開網址與自訂網域的 R2 bucket。Actions artifact 僅限私有來源 repository。
 
-| BACKUP_DEST        | 去處                    | 備註                                                           |
-| ------------------ | ----------------------- | -------------------------------------------------------------- |
-| `artifact`（預設） | GitHub Actions artifact | 保留 14 天，Actions 頁面下載                                   |
-| `r2`               | Cloudflare R2 bucket    | 另設 `R2_BUCKET=<bucket 名>`；token 需 R2 寫權限；自管保留策略 |
-
-手動補備份＝Actions → Run workflow。還原：`wrangler d1 execute kikigaki --remote --file=backup-<stamp>.sql`。
+`pnpm backup:d1` 會建立權限受限的邏輯備份，並在本機驗證還原、筆數、外鍵及 FTS 重建。還原應使用空資料庫。既有安裝升級及保留憑證的換鑰程序見 [SECURITY.md](./SECURITY.md)。請勿直接更換已有加密憑證的 `AI_SECRET`。
 
 ## 排程發文保鮮（Cron）
 
@@ -230,7 +223,6 @@ open http://localhost:3000/admin  # 首跑頁：建立第一個管理員帳號�
 - 免 Docker：`ADAPTER=node pnpm build && node node-shim/migrate.mjs && node server.mjs`
 
 ## 部署（GitHub Actions）
-
 
 流水線（`.github/workflows/ci.yml`）：
 

@@ -71,7 +71,9 @@ export function createStripeProvider(secret: string, webhookSecret: string): Che
 					.map(([k, v]) => [k, v as string])
 			);
 			if (!parts.t || !parts.v1) return null;
-			if (Math.abs(Date.now() / 1000 - Number(parts.t)) > TOLERANCE_SEC) return null;
+			const timestamp = Number(parts.t);
+			if (!Number.isFinite(timestamp) || Math.abs(Date.now() / 1000 - timestamp) > TOLERANCE_SEC)
+				return null;
 			const expect = await hmac(webhookSecret, `${parts.t}.${rawBody}`);
 			if (!safeEqual(expect, parts.v1)) return null;
 			let event: { type?: string; data?: { object?: Record<string, unknown> } };
@@ -81,7 +83,12 @@ export function createStripeProvider(secret: string, webhookSecret: string): Che
 				return null;
 			}
 			const obj = event.data?.object ?? {};
-			if (event.type === 'checkout.session.completed')
+			// Checkout can complete before delayed payment methods settle.
+			if (
+				event.type === 'checkout.session.completed' ||
+				event.type === 'checkout.session.async_payment_succeeded'
+			) {
+				if (obj.payment_status !== 'paid') return { handled: false };
 				return {
 					handled: true,
 					sessionRef: String(obj.id ?? ''),
@@ -91,6 +98,7 @@ export function createStripeProvider(secret: string, webhookSecret: string): Che
 							? String((obj.customer_details as { email: string }).email)
 							: ''
 				} satisfies WebhookOutcome;
+			}
 			if (event.type === 'charge.refunded')
 				return {
 					handled: true,

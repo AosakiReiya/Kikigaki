@@ -5,10 +5,10 @@
  * Flow: rewrite wrangler.toml project name → create D1 (if unbound) → create R2 (idempotent) →
  * apply migrations → Pages project → secrets (CRON_SECRET/AI_SECRET randomly generated) →
  * seed demo posts → build + production deploy → print URL and next steps.
- * Prereqs: npx wrangler login done, pnpm install, Node ≥ 20.
+ * Prereqs: npx wrangler login done, pnpm install, Node 22.13 or later.
  */
 import { execFileSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, chmodSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 
 const argv = process.argv.slice(2);
@@ -99,33 +99,58 @@ if (!pl.includes(project))
 	});
 console.log('  ✓ 就緒');
 
-// 6. Secrets（缺才補；值隨機生成並顯示一次）
+// Preserve existing credentials; bootstrap never rotates an established master key.
 step('Secrets（CRON_SECRET／AI_SECRET）');
-const sl = run(['wrangler', 'pages', 'secret', 'list', '--project-name', project], {
-	allowFail: true
-});
-const need = (n) => !new RegExp(`\\b${n}\\b`).test(sl);
-const gen = () => randomBytes(24).toString('base64url');
-for (const s of ['CRON_SECRET', 'AI_SECRET']) {
-	if (need(s)) {
-		const v = gen();
-		try {
-			execFileSync(
-				'bash',
-				[
-					'-c',
-					`printf '%s' ${JSON.stringify(v)} | npx wrangler pages secret put ${s} --project-name ${project}`
-				],
-				{ encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
-			);
-			console.log(`  ✓ ${s} 已設定＝${v}（記下來，之後只能覆寫不能讀取）`);
-		} catch (e) {
-			console.warn(
-				`  ! ${s} 設定失敗，手動：printf '值' | npx wrangler pages secret put ${s} --project-name ${project}`
-			);
-			void e;
-		}
-	} else console.log(`  ✓ ${s} 已存在，保留`);
+const sl = run(['wrangler', 'pages', 'secret', 'list', '--project-name', project]);
+const need = (name) => !sl.includes(`- ${name}: Value Encrypted`);
+if (need('AI_SECRET')) {
+	const counts = JSON.parse(
+		run([
+			'wrangler',
+			'd1',
+			'execute',
+			project,
+			'--remote',
+			'--json',
+			'--command',
+			"SELECT count(*) AS total FROM ai_providers WHERE api_key_enc != '' UNION ALL SELECT count(*) FROM mcp_servers WHERE headers_enc != '' UNION ALL SELECT count(*) FROM site_settings WHERE key IN ('email_api_enc','email_secrets_enc','gsc_sa_enc') AND value != ''"
+		])
+	);
+	if (counts.some((entry) => !entry.success)) throw new Error('Credential inventory failed');
+	if (counts.flatMap((entry) => entry.results).some((entry) => entry.total > 0)) {
+		throw new Error(
+			'Existing encrypted credentials require the preserved-data rotation procedure in SECURITY.md; bootstrap has made no key changes.'
+		);
+	}
+}
+const secrets = {};
+for (const name of ['CRON_SECRET', 'AI_SECRET']) {
+	if (need(name)) secrets[name] = randomBytes(32).toString('hex');
+	else console.log(`  ✓ ${name} 已存在，保留`);
+}
+if (Object.keys(secrets).length) {
+	const directory = '.wrangler/security-setup';
+	mkdirSync(directory, { recursive: true, mode: 0o700 });
+	chmodSync(directory, 0o700);
+	const secretFile = `${directory}/secrets.json`;
+	writeFileSync(secretFile, JSON.stringify(secrets), { mode: 0o600 });
+	chmodSync(secretFile, 0o600);
+	const log = `${directory}/wrangler.log`;
+	writeFileSync(log, '', { mode: 0o600 });
+	chmodSync(log, 0o600);
+	try {
+		execFileSync('npx', ['wrangler', 'pages', 'secret', 'bulk', '--project-name', project], {
+			input: JSON.stringify(secrets),
+			encoding: 'utf8',
+			stdio: ['pipe', 'pipe', 'pipe'],
+			env: { ...process.env, WRANGLER_LOG_PATH: log, WRANGLER_SEND_METRICS: 'false' }
+		});
+	} catch {
+		throw new Error(
+			'Secret configuration failed; deployment stopped and credential output suppressed.'
+		);
+	}
+	console.log('  ✓ 隨機 secrets 已加密設定；沒有輸出金鑰值');
 }
 
 // 7. 種子示範文

@@ -29,41 +29,36 @@ export const load: PageServerLoad = async ({ cookies, platform }) => {
 const LIMIT = 5;
 const WINDOW_MS = 15 * 60 * 1000;
 
-/* * read—judge—write: returns allow/deny and the current tally (login throttling is low-frequency; races acceptable) */
-async function checkAndBump(
-	kit: ReturnType<typeof getDb>,
-	ip: string,
-	now: number
-): Promise<{ allowed: boolean; count: number }> {
-	const rows = await kit.select().from(loginAttempts).where(eq(loginAttempts.ip, ip)).limit(1);
-	const hit = rows[0];
-	if (!hit || hit.resetAt.getTime() <= now) {
-		await kit
-			.insert(loginAttempts)
-			.values({ ip, count: 1, resetAt: new Date(now + WINDOW_MS) })
-			.onConflictDoUpdate({
-				target: loginAttempts.ip,
-				set: { count: 1, resetAt: new Date(now + WINDOW_MS) }
-			});
-		return { allowed: true, count: 1 };
-	}
-	if (hit.count >= LIMIT) return { allowed: false, count: hit.count };
-	await kit
-		.update(loginAttempts)
-		.set({ count: hit.count + 1, resetAt: new Date(now + WINDOW_MS) })
-		.where(eq(loginAttempts.ip, ip));
-	return { allowed: true, count: hit.count + 1 };
+/** Reserve an attempt atomically so parallel requests cannot bypass the IP limit. */
+async function checkAndBump(db: NonNullable<App.Platform['env']['DB']>, ip: string, now: number) {
+	const count = await db
+		.prepare(
+			`INSERT INTO login_attempts (ip, count, reset_at) VALUES (?, 1, ?)
+			 ON CONFLICT(ip) DO UPDATE SET
+			 count = CASE WHEN reset_at <= ? THEN 1 ELSE count + 1 END,
+			 reset_at = CASE WHEN reset_at <= ? THEN ? ELSE reset_at END
+			 WHERE reset_at <= ? OR count < ? RETURNING count`
+		)
+		.bind(ip, now + WINDOW_MS, now, now, now + WINDOW_MS, now, LIMIT)
+		.first<number>('count');
+	return count !== null;
 }
 
 export const actions: Actions = {
-	default: async ({ request, cookies, platform }) => {
+	default: async ({ request, cookies, platform, getClientAddress }) => {
 		const db = platform?.env.DB;
 		if (!db) return fail(500, { error: '資料庫未配置' });
 
 		const now = Date.now();
-		const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
-		const gate = await checkAndBump(getDb(db), ip, now);
-		if (!gate.allowed) {
+		// The adapter supplies the trusted client address; self-hosted callers cannot spoof it with a header.
+		let ip = 'unknown';
+		try {
+			ip = getClientAddress();
+		} catch {
+			/* Share a conservative fallback limit when no address is available. */
+		}
+		const allowed = await checkAndBump(db, ip, now);
+		if (!allowed) {
 			return fail(429, { error: '嘗試次數過多，請 15 分鐘後再試' });
 		}
 

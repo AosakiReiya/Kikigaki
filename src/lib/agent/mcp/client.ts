@@ -61,6 +61,7 @@ async function post(
 ): Promise<{ res: Response }> {
 	const res = await fetch(url, {
 		method: 'POST',
+		redirect: 'error',
 		headers: {
 			'content-type': 'application/json',
 			accept: 'application/json, text/event-stream',

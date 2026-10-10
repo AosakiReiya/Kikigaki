@@ -44,6 +44,7 @@ export function createAirwallexProvider(
 			`${base}/api/v1/authentication/refresh?client_id=${encodeURIComponent(clientId)}&request_id=${crypto.randomUUID()}`,
 			{
 				method: 'POST',
+				redirect: 'error',
 				headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey }
 			}
 		);
@@ -60,6 +61,7 @@ export function createAirwallexProvider(
 		const t = await token();
 		const r = await fetch(base + path, {
 			method: 'POST',
+			redirect: 'error',
 			headers: { Authorization: `Bearer ${t}`, 'Content-Type': 'application/json' },
 			body: JSON.stringify(body)
 		});
@@ -81,7 +83,7 @@ export function createAirwallexProvider(
 				amount: Number(moneyString(total, order.currency)),
 				currency: order.currency.toUpperCase(),
 				merchant_order_id: order.id,
-				product_name: lines[0]?.title.slice(0, 255) ?? 'Kikigaki',
+				product_name: lines[0]?.title.slice(0, 255) ?? 'Kirikirin',
 				return_url: `${origin}/checkout/thanks?order=${order.id}&f=1`
 			});
 			if (status !== 200) throw new Error(`airwallex_intent_${status}`);
@@ -99,7 +101,9 @@ export function createAirwallexProvider(
 			const ts = headers.get('x-timestamp');
 			const sig = headers.get('x-signature');
 			if (!ts || !sig || !webhookSecret) return null;
-			if (Math.abs(Date.now() / 1000 - Number(ts)) > TOLERANCE_SEC) return null;
+			const timestamp = Number(ts);
+			if (!Number.isFinite(timestamp) || Math.abs(Date.now() / 1000 - timestamp) > TOLERANCE_SEC)
+				return null;
 			let expect: string;
 			try {
 				expect = await hmacB64(webhookSecret, `${ts}.${rawBody}`);

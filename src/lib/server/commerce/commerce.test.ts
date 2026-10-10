@@ -139,7 +139,7 @@ describe('stripe webhook 驗簽（官方 t=,v1= scheme，零 SDK）', () => {
 	}
 	const body = JSON.stringify({
 		type: 'checkout.session.completed',
-		data: { object: { id: 'cs_1', customer_details: { email: 'a@b.c' } } }
+		data: { object: { id: 'cs_1', payment_status: 'paid', customer_details: { email: 'a@b.c' } } }
 	});
 
 	it('合法簽章 → 成交事件解析', async () => {
@@ -149,6 +149,36 @@ describe('stripe webhook 驗簽（官方 t=,v1= scheme，零 SDK）', () => {
 			hdr(`t=${t},v1=${await sign(t, body)}`)
 		);
 		expect(out).toEqual({ handled: true, sessionRef: 'cs_1', providerRef: '', email: 'a@b.c' });
+	});
+	it.each(['unpaid', 'no_payment_required', undefined])(
+		'does not deliver an unsettled checkout (%s)',
+		async (paymentStatus) => {
+			const t = String(Math.floor(Date.now() / 1000));
+			const pending = JSON.stringify({
+				type: 'checkout.session.completed',
+				data: { object: { id: 'cs_1', payment_status: paymentStatus } }
+			});
+			expect(
+				await createStripeProvider('sk_t', secret).verifyWebhook(
+					pending,
+					hdr(`t=${t},v1=${await sign(t, pending)}`)
+				)
+			).toEqual({ handled: false });
+		}
+	);
+	it('delivers after a signed delayed-payment success and rejects invalid timestamps', async () => {
+		const t = String(Math.floor(Date.now() / 1000));
+		const settled = JSON.stringify({
+			type: 'checkout.session.async_payment_succeeded',
+			data: { object: { id: 'cs_1', payment_status: 'paid' } }
+		});
+		const provider = createStripeProvider('sk_t', secret);
+		expect(
+			await provider.verifyWebhook(settled, hdr(`t=${t},v1=${await sign(t, settled)}`))
+		).toMatchObject({ handled: true, sessionRef: 'cs_1' });
+		expect(
+			await provider.verifyWebhook(settled, hdr(`t=NaN,v1=${await sign('NaN', settled)}`))
+		).toBeNull();
 	});
 	it('偽造簽章／缺頭／過期時間戳 → null', async () => {
 		const p = createStripeProvider('sk_t', secret);

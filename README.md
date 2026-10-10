@@ -37,6 +37,10 @@ runtime layering, theme-slot contract) every PR must keep.
 | i18n      | Paraglide.js (base: zh-tw)                        |
 | Deploy    | Cloudflare Pages (`@sveltejs/adapter-cloudflare`) |
 
+## Security updates
+
+Existing installations should read [SECURITY.md](./SECURITY.md) before replacing encryption keys or redeploying. Use Node 22.13 or later for the verified backup and maintenance tools.
+
 ## Getting started (fork path)
 
 ```bash
@@ -193,9 +197,7 @@ Two layers, by design:
 
 ## Database backups
 
-`.github/workflows/backup-d1.yml` exports the production D1 daily (16:30 UTC). Destination is a repo
-variable: `artifact` (default, 14-day Actions artifact) or `r2` (bucket of your choice). Restore:
-`wrangler d1 execute <project> --remote --file=backup-<stamp>.sql`.
+The backup workflow is disabled until configured and explicitly enabled. Backups contain private records: use a private backup repository or a bucket without public URLs or custom domains. Actions artifacts are allowed only in private source repositories. `pnpm backup:d1` creates a private logical backup and verifies a local restore, including FTS. Restore into an empty database; see [SECURITY.md](./SECURITY.md).
 
 ## OG fallback
 
@@ -234,7 +236,6 @@ open http://localhost:3000/admin
 [ARCHITECTURE.md](ARCHITECTURE.md)).
 
 ## Deploy (GitHub Actions)
-
 
 Pipeline (`.github/workflows/ci.yml`): quality gate → PR preview deploys (URL posted as PR comment)
 → production on `main` behind **environment approval** (build → D1 migrations → Pages deploy →

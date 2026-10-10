@@ -33,7 +33,8 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 			createdAt: comments.createdAt
 		})
 		.from(comments)
-		.where(and(eq(comments.postId, `post:${slug}`), eq(comments.status, 'approved')))
+		.innerJoin(posts, eq(comments.postId, posts.id))
+		.where(and(eq(posts.slug, slug), eq(posts.published, true), eq(comments.status, 'approved')))
 		.orderBy(desc(comments.createdAt));
 
 	return json(rows.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })));
@@ -126,15 +127,16 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	}
 	const turnstileResult = turnstile.status; // 'passed' | 'skipped'
 
-	// the post must exist
+	// Comments are available only for published posts, including UUID-backed posts.
 	const postRows = await kit
 		.select({ id: posts.id })
 		.from(posts)
-		.where(eq(posts.id, `post:${slug}`))
+		.where(and(eq(posts.slug, slug), eq(posts.published, true)))
 		.limit(1);
 	if (postRows.length === 0) {
 		return json({ error: 'post_not_found', reason: 'post_not_found' }, { status: 404 });
 	}
+	const postId = postRows[0].id;
 
 	// Phase 70: replies — parent must exist, same post, approved; replies to child comments auto-attach to the thread root (one level)
 	let parentId: string | null = null;
@@ -149,14 +151,14 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 			.from(comments)
 			.where(eq(comments.id, rawParentId))
 			.limit(1);
-		if (!parentRow || parentRow.postId !== `post:${slug}` || parentRow.status !== 'approved') {
+		if (!parentRow || parentRow.postId !== postId || parentRow.status !== 'approved') {
 			return json({ error: 'validation_parent', reason: 'validation_parent' }, { status: 400 });
 		}
 		parentId = parentRow.parentId ?? parentRow.id;
 	}
 
-	const ipHash = await sha256Hex(`kikigaki:${ip}`);
-	const userAgentHash = await sha256Hex(`kikigaki:ua:${userAgent}`);
+	const ipHash = await sha256Hex(`kirikirin:${ip}`);
+	const userAgentHash = await sha256Hex(`kirikirin:ua:${userAgent}`);
 
 	// Rate limit: same IP max 3 per 5 minutes (separate from spam detection)
 	const windowStart = new Date(Date.now() - RATE_WINDOW_MIN * 60 * 1000);
@@ -216,7 +218,7 @@ export const POST: RequestHandler = async ({ request, platform }) => {
 	const [inserted] = await kit
 		.insert(comments)
 		.values({
-			postId: `post:${slug}`,
+			postId,
 			parentId,
 			name,
 			email: email || null,

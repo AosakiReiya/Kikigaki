@@ -21,6 +21,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Exports contain private records and encrypted credentials, even on a public site.
+      - name: Validate private backup destination
+        env:
+          BACKUP_DEST: ${{ vars.BACKUP_DEST || 'artifact' }}
+          SOURCE_PRIVATE: ${{ github.event.repository.private }}
+          BACKUP_REPO: ${{ vars.BACKUP_REPO }}
+          GH_TOKEN: ${{ secrets.BACKUP_TOKEN }}
+        run: |
+          case "$BACKUP_DEST" in
+            artifact)
+              if [ "$SOURCE_PRIVATE" != "true" ]; then
+                echo "D1 artifacts require a private source repository; configure a private backup repository or bucket."
+                exit 1
+              fi
+              ;;
+            repo)
+              if [ -z "$BACKUP_REPO" ] || [ -z "$GH_TOKEN" ]; then exit 1; fi
+              if [ "$(gh api "repos/$BACKUP_REPO" --jq .private)" != "true" ]; then
+                echo "Backup repository must be private."
+                exit 1
+              fi
+              ;;
+            r2) ;;
+            *) echo "Unknown backup destination"; exit 1 ;;
+          esac
+
       - uses: pnpm/action-setup@v4
         with:
           version: 10
@@ -30,19 +56,32 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate private R2 destination
+        if: ${{ vars.BACKUP_DEST == 'r2' }}
+        env:
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$R2_BUCKET" ]; then exit 1; fi
+          pnpm exec wrangler r2 bucket dev-url get "$R2_BUCKET" | grep -Fq 'Public access via the r2.dev URL is disabled.'
+          pnpm exec wrangler r2 bucket domain list "$R2_BUCKET" | grep -Fq 'There are no custom domains connected to this bucket.'
+
       - name: Export D1 (remote)
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          pnpm install --frozen-lockfile
           STAMP=$(date -u +%Y%m%d-%H%M%S)
-          pnpm exec wrangler d1 export "${{ vars.D1_DATABASE || 'kikigaki' }}" --remote --output "backup-$STAMP.sql"
+          node scripts/backup-d1.mjs --database "${{ vars.D1_DATABASE || 'kikigaki' }}" --remote --output "backup-$STAMP.sql"
           echo "STAMP=$STAMP" >> "$GITHUB_ENV"
           wc -c "backup-$STAMP.sql"
 
       - name: Upload artifact (retention 14 days)
-        if: ${{ vars.BACKUP_DEST != 'r2' }}
+        if: ${{ vars.BACKUP_DEST == '' || vars.BACKUP_DEST == 'artifact' }}
         uses: actions/upload-artifact@v4
         with:
           name: d1-backup-${{ env.STAMP }}
@@ -55,11 +94,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          R2_BUCKET: ${{ vars.R2_BUCKET }}
         run: |
-          if [ -z "${{ vars.R2_BUCKET }}" ]; then echo "R2_BUCKET variable not set"; exit 1; fi
-          pnpm exec wrangler r2 object put "${{ vars.R2_BUCKET }}/d1/backup-$STAMP.sql" \
+          if [ -z "$R2_BUCKET" ]; then echo "R2_BUCKET variable not set"; exit 1; fi
+          pnpm exec wrangler r2 object put "$R2_BUCKET/d1/backup-$STAMP.sql" \
             --file "backup-$STAMP.sql" --remote --content-type "application/sql"
-          echo "backup uploaded to r2://${{ vars.R2_BUCKET }}/d1/backup-$STAMP.sql"
+          echo "backup uploaded to r2://$R2_BUCKET/d1/backup-$STAMP.sql"
 
       - name: Checkout backup repository
         if: ${{ vars.BACKUP_DEST == 'repo' }}
@@ -72,8 +112,11 @@ jobs:
       - name: Push dump to backup repository
         if: ${{ vars.BACKUP_DEST == 'repo' }}
         working-directory: backup-repo
+        env:
+          BACKUP_REPO: ${{ vars.BACKUP_REPO }}
+          BACKUP_TOKEN: ${{ secrets.BACKUP_TOKEN }}
         run: |
-          if [ -z "${{ vars.BACKUP_REPO }}" ] || [ -z "${{ secrets.BACKUP_TOKEN }}" ]; then
+          if [ -z "$BACKUP_REPO" ] || [ -z "$BACKUP_TOKEN" ]; then
             echo "BACKUP_REPO variable / BACKUP_TOKEN secret not set"; exit 1
           fi
           mkdir -p d1

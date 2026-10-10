@@ -46,7 +46,7 @@ jobs:
         run: pnpm i18n:check
 
       - name: Generate paraglide runtime
-        run: pnpm paraglide-js generate --project ./project.inlang --outdir ./src/lib/paraglide || true
+        run: pnpm exec paraglide-js compile --project ./project.inlang --outdir ./src/lib/paraglide --emit-ts-declarations
 
       - name: Lint
         run: pnpm lint
@@ -55,7 +55,7 @@ jobs:
         run: pnpm check
 
       - name: Unit & component tests
-        run: pnpm test
+        run: pnpm exec playwright install --with-deps chromium && pnpm test
 
   deploy-preview:
     name: Preview deploy (PR)
@@ -137,6 +137,16 @@ jobs:
 
       - run: pnpm build
 
+      - name: Verify production secrets are encrypted
+        run: |
+          pnpm exec wrangler pages secret list --project-name "${{ vars.PAGES_PROJECT || 'kikigaki' }}" > /tmp/pages-secret-names.txt
+          for name in AI_SECRET CRON_SECRET; do
+            if ! grep -Fq -- "- $name: Value Encrypted" /tmp/pages-secret-names.txt; then
+              echo "$name must be configured as a Pages secret before production deployment."
+              exit 1
+            fi
+          done
+
       - name: Apply D1 migrations (remote)
         run: pnpm exec wrangler d1 migrations apply "${{ vars.D1_DATABASE || 'kikigaki' }}" --remote
 
@@ -171,7 +181,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Local D1 schema + demo content + test admin
         run: |
-          pnpm exec wrangler d1 migrations kikigaki --local --yes
+          pnpm exec wrangler d1 migrations apply kikigaki --local
           node scripts/seed-demo.mjs --posts
           node .e2e-archive/bootstrap-admin.mjs
       - name: Mock payment env (79e suite)
